@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const logPath = path.join(__dirname, '..', 'TheIsle', 'Saved', 'Logs', 'TheIsle.log');
+const logPath = path.join(__dirname, '..', 'extinction', 'TheIsle', 'Saved', 'Logs', 'TheIsle.log');
 const playablesPath = path.join(__dirname, 'playables.txt');
 const playersPath = path.join(__dirname, 'players');
 
@@ -14,21 +14,29 @@ const getPlayables = () => {
   return playables;
 };
 
+const getLog = () => {
+  const buffer = fs.readFileSync(logPath);
+  const content = buffer.toString();
+
+  const log = content.split('\r\n');
+  log.pop();
+
+  return log;
+};
+
 const monitorLog = () => {
   const watcher = fs.watch(logPath);
 
   watcher.on('change', () => {
-    const buffer = fs.readFileSync(logPath);
-    const content = buffer.toString();
+    const currentLog = getLog();
 
-    const currentLines = content.split('\r\n');
-    currentLines.pop();
+    const lines = currentLog.slice(previousLog.length);
 
-    const lines = currentLines.slice(previousLines.length);
+    previousLog = lines;
     console.log(lines);
   });
 
-  const previousLines = [];
+  const previousLog = getLog();
 };
 
 const playables = getPlayables();
