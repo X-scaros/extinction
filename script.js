@@ -5,6 +5,14 @@ const logPath = path.join(__dirname, '..', 'extinction', 'TheIsle', 'Saved', 'Lo
 const playablesPath = path.join(__dirname, 'playables.txt');
 const playersPath = path.join(__dirname, 'players');
 
+const regexes = {
+  found: /(\d{17})\] Joined The Server\. Save file found Dino: BP_([a-zA-Z]*)/,
+  fresh: /(\d{17})\] Save file not found - Starting as fresh spawn. Class: BP_([a-zA-Z]*)/,
+  left: /(\d{17})\] Left The Server while not being safelogged, Was playing as: ([a-zA-Z]*)/,
+  safelogged: /(\d{17})\] Left The Server whilebeing safelogged, Was playing as: ([a-zA-Z]*)/,
+  naturalcauses: /(\d{17})\] Dino: ([a-zA-Z]*), .*, .* - Died from Natural cause/
+};
+
 const getPlayables = () => {
   const buffer = fs.readFileSync(playablesPath);
   const content = buffer.toString();
@@ -33,20 +41,28 @@ const getNewLines = () => {
   return newLines;
 };
 
+const matchLines = (lines) => {
+  let match;
+
+  for (const key in regexes) {
+    const regex = regexes[key];
+
+    console.log(regex);
+  }
+};
+
 const monitorLog = () => {
   const watcher = fs.watch(logPath);
 
   watcher.on('change', () => {
     const newLines = getNewLines();
-    
-    for (const line of newLines) {
-      console.log(line);
-    }
+    const match = matchLines(newLines);
+    console.log(match);
   });
 };
 
-let previousLog = getLog();
-
 const playables = getPlayables();
+
+let previousLog = getLog();
 
 monitorLog();
