@@ -24,21 +24,28 @@ const getLog = () => {
   return log;
 };
 
+const getNewLines = () => {
+  const currentLog = getLog();
+
+  const newLines = currentLog.slice(previousLog.length);
+  previousLog = currentLog;
+  
+  return newLines;
+};
+
 const monitorLog = () => {
   const watcher = fs.watch(logPath);
 
   watcher.on('change', () => {
-    const currentLog = getLog();
-
-    const newLines = currentLog.slice(previousLog.length);
+    const newLines = getNewLines();
     
     for (const line of newLines) {
       console.log(line);
     }
   });
-
-  let previousLog = getLog();
 };
+
+let previousLog = getLog();
 
 const playables = getPlayables();
 
