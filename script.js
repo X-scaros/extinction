@@ -42,12 +42,15 @@ const getNewLines = () => {
 };
 
 const matchLines = (lines) => {
-  let match;
-
   for (const key in regexes) {
     const regex = regexes[key];
 
-    console.log(regex);
+    for (const line of lines) {
+      if (regex.test(line)) {
+        const match = line.match(regex);
+        return match;
+      }
+    }
   }
 };
 
