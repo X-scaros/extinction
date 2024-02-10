@@ -31,9 +31,10 @@ const monitorLog = () => {
     const currentLog = getLog();
 
     const newLines = currentLog.slice(previousLog.length);
-    previousLog = currentLog;
-
-    console.log(newLines);
+    
+    for (const line of newLines) {
+      console.log(line);
+    }
   });
 
   let previousLog = getLog();
