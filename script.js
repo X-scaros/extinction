@@ -30,13 +30,13 @@ const monitorLog = () => {
   watcher.on('change', () => {
     const currentLog = getLog();
 
-    const lines = currentLog.slice(previousLog.length);
+    const newLines = currentLog.slice(previousLog.length);
+    previousLog = currentLog;
 
-    previousLog = lines;
-    console.log(lines);
+    console.log(newLines);
   });
 
-  const previousLog = getLog();
+  let previousLog = getLog();
 };
 
 const playables = getPlayables();
