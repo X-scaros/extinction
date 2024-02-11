@@ -29,6 +29,24 @@ const createPlayer = (steamId) => {
   fs.writeFileSync(playerPath, stringified);
 };
 
+const readPlayer = (steamId) => {
+  const playerPath = path.join(playersPath, `${steamId}.json`);
+
+  const content = fs.readFileSync(playerPath, 'utf-8');
+
+  const parsed = JSON.parse(content);
+
+  return parsed;
+};
+
+const writePlayer = (steamId, data) => {
+  const playerPath = path.join(playersPath, `${steamId}.json`);
+
+  const stringified = JSON.stringify(data);
+
+  fs.writeFileSync(playerPath, stringified);
+};
+
 const getLog = () => {
   const content = fs.readFileSync(logPath, 'utf-8');
   const log = content.split('\r\n');
@@ -49,11 +67,18 @@ const getNewLines = () => {
 const processLines = (lines) => {
   for (const line of lines) {
     for (const [regex, action] of regexes) {
-      if (regex.test(line)) {
-        const match = line.match(regex);
-
-        action(match[1], match[2]);
+      if (!regex.test(line)) {
+        continue;
       }
+
+      const match = line.match(regex);
+
+      const steamId = match[1];
+      const playable = match[2];
+
+      action(steamId, playable);
+
+      break;
     }
   }
 };
@@ -70,10 +95,27 @@ const monitorLog = () => {
 
 const actions = {
   startTimer(steamId, playable) {
-    console.log(`${steamId} started timer as ${playable}.`);
+    const timer = {
+      playable,
+      time: Date.now()
+    };
+
+    timers[steamId] = timer;
   },
   stopTimer(steamId, playable) {
-    console.log(`${steamId} stopped timer as ${playable}.`);
+    const playerPath = path.join(playersPath, `${steamId}.json`);
+
+    if (!fs.existsSync(playerPath)) {
+      createPlayer(steamId);
+    }
+
+    const player = readPlayer(steamId);
+
+    const elapsedTime = Date.now() - player.playtimes[playable];
+
+    player.playtimes[playable] += elapsedTime;
+
+    writePlayer(steamId, player);
   }
 };
 
