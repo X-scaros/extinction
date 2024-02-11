@@ -42,7 +42,7 @@ const readPlayer = (steamId) => {
 const writePlayer = (steamId, data) => {
   const playerPath = path.join(playersPath, `${steamId}.json`);
 
-  const stringified = JSON.stringify(data);
+  const stringified = JSON.stringify(data, null, 2);
 
   fs.writeFileSync(playerPath, stringified);
 };
