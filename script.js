@@ -5,27 +5,32 @@ const logPath = path.join(__dirname, '..', 'extinction', 'TheIsle', 'Saved', 'Lo
 const playablesPath = path.join(__dirname, 'playables.txt');
 const playersPath = path.join(__dirname, 'players');
 
-const regexes = {
-  found: /(\d{17})\] Joined The Server\. Save file found Dino: BP_([a-zA-Z]*)/,
-  fresh: /(\d{17})\] Save file not found - Starting as fresh spawn. Class: BP_([a-zA-Z]*)/,
-  left: /(\d{17})\] Left The Server while not being safelogged, Was playing as: ([a-zA-Z]*)/,
-  safelogged: /(\d{17})\] Left The Server whilebeing safelogged, Was playing as: ([a-zA-Z]*)/,
-  naturalcauses: /(\d{17})\] Dino: ([a-zA-Z]*), .*, .* - Died from Natural cause/
-};
-
 const getPlayables = () => {
-  const buffer = fs.readFileSync(playablesPath);
-  const content = buffer.toString();
-
+  const content = fs.readFileSync(playablesPath, 'utf-8');
   const playables = content.split(', ');
 
   return playables;
 };
 
-const getLog = () => {
-  const buffer = fs.readFileSync(logPath);
-  const content = buffer.toString();
+const createPlayer = (steamId) => {
+  const playtimes = {};
 
+  for (const playable of playables) {
+    playtimes[playable] = 0;
+  }
+
+  const player = {
+    playtimes
+  };
+
+  const playerPath = path.join(playersPath, `${steamId}.json`);
+  const stringified = JSON.stringify(player, null, 2);
+
+  fs.writeFileSync(playerPath, stringified);
+};
+
+const getLog = () => {
+  const content = fs.readFileSync(logPath, 'utf-8');
   const log = content.split('\r\n');
   log.pop();
 
@@ -41,14 +46,13 @@ const getNewLines = () => {
   return newLines;
 };
 
-const matchLines = (lines) => {
-  for (const key in regexes) {
-    const regex = regexes[key];
-
-    for (const line of lines) {
+const processLines = (lines) => {
+  for (const line of lines) {
+    for (const [regex, action] of regexes) {
       if (regex.test(line)) {
         const match = line.match(regex);
-        return match;
+
+        action(match[1], match[2]);
       }
     }
   }
@@ -59,10 +63,44 @@ const monitorLog = () => {
 
   watcher.on('change', () => {
     const newLines = getNewLines();
-    const match = matchLines(newLines);
-    console.log(match);
+
+    processLines(newLines);
   });
 };
+
+const actions = {
+  startTimer(steamId, playable) {
+    console.log(`${steamId} started timer as ${playable}.`);
+  },
+  stopTimer(steamId, playable) {
+    console.log(`${steamId} stopped timer as ${playable}.`);
+  }
+};
+
+const regexes = new Map([
+  [
+    /(\d{17})\] Joined The Server\. Save file found Dino: BP_([a-zA-Z]*)/,
+    actions.startTimer
+  ],
+  [
+    /(\d{17})\] Save file not found - Starting as fresh spawn. Class: BP_([a-zA-Z]*)/,
+    actions.startTimer
+  ],
+  [
+    /(\d{17})\] Left The Server while not being safelogged, Was playing as: ([a-zA-Z]*)/,
+    actions.stopTimer
+  ],
+  [
+    /(\d{17})\] Left The Server whilebeing safelogged, Was playing as: ([a-zA-Z]*)/,
+    actions.stopTimer
+  ],
+  [
+    /(\d{17})\] Dino: ([a-zA-Z]*), .*, .* - Died from Natural cause/,
+    actions.stopTimer
+  ]
+]);
+
+const timers = {};
 
 const playables = getPlayables();
 
